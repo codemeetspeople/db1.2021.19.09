@@ -1,7 +1,9 @@
 DROP TABLE IF EXISTS "category" CASCADE;
 CREATE TABLE "category" (
     id SERIAL PRIMARY KEY,
-    title VARCHAR(255) NOT NULL
+    title VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP
 );
 
 
@@ -10,21 +12,27 @@ CREATE TABLE "item" (
     id SERIAL PRIMARY KEY,
     category_id INTEGER,
     title VARCHAR(255) NOT NULL,
-    price NUMERIC(8, 2) NOT NULL CHECK (price > 0)
+    price NUMERIC(8, 2) NOT NULL CHECK (price > 0),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP
 );
 
 
 DROP TABLE IF EXISTS "tag" CASCADE;
 CREATE TABLE "tag" (
     id SERIAL PRIMARY KEY,
-    title VARCHAR(255) NOT NULL
+    title VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP
 );
 
 
 DROP TABLE IF EXISTS "item_tag";
 CREATE TABLE "item_tag" (
     item_id INTEGER NOT NULL,
-    tag_id INTEGER NOT NULL
+    tag_id INTEGER NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP
 );
 
 
@@ -32,6 +40,26 @@ ALTER TABLE "item" ADD CONSTRAINT category_id_fk FOREIGN KEY (category_id) REFER
 ALTER TABLE "item_tag" ADD CONSTRAINT item_id_fk FOREIGN KEY (item_id) REFERENCES "item"(id) ON DELETE CASCADE;
 ALTER TABLE "item_tag" ADD CONSTRAINT tag_id_fk FOREIGN KEY (tag_id) REFERENCES "tag"(id) ON DELETE CASCADE;
 
+
+CREATE OR REPLACE FUNCTION update_timestamp_col()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END
+$$ language 'plpgsql';
+
+CREATE TRIGGER update_category_timestamp_col BEFORE UPDATE
+ON "category" FOR EACH ROW EXECUTE PROCEDURE update_timestamp_col();
+
+CREATE TRIGGER update_item_timestamp_col BEFORE UPDATE
+ON "item" FOR EACH ROW EXECUTE PROCEDURE update_timestamp_col();
+
+CREATE TRIGGER update_tag_timestamp_col BEFORE UPDATE
+ON "tag" FOR EACH ROW EXECUTE PROCEDURE update_timestamp_col();
+
+CREATE TRIGGER update_item_tag_timestamp_col BEFORE UPDATE
+ON "item_tag" FOR EACH ROW EXECUTE PROCEDURE update_timestamp_col();
 
 
 INSERT INTO "category" (title) VALUES ('cat_1'),('cat_2'),('cat_3');
@@ -86,3 +114,5 @@ CREATE SEQUENCE basket_id_sequnce;
 ALTER TABLE "basket" ALTER COLUMN id SET DEFAULT nextval('basket_id_sequnce');
 ALTER SEQUENCE basket_id_sequnce OWNED BY "basket".id;
 SELECT setval('basket_id_sequnce', SELECT MAX(id) FROM "basket");
+
+CREATE TABLE "basket_temp" (LIKE "basket" INCLUDING DEFAULTS INCLUDING CONSTRAINTS INCLUDING INDEXES);
