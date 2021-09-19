@@ -46,4 +46,43 @@ INSERT INTO "tag" (title) VALUES ('tag_1'),('tag_2'),('tag_3');
 INSERT INTO "item_tag" (item_id, tag_id) VALUES (1, 1), (1, 2), (2, 3), (4, 2);
 
 
+DROP TABLE IF EXISTS "basket";
+CREATE TABLE "basket" (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(50) NOT NULL
+);
 
+
+INSERT INTO "basket" (title) VALUES
+('apple'), ('apple'),
+('banana'), ('banana'), ('banana'),
+('orange');
+
+SELECT title, count(title) FROM "basket" GROUP BY title HAVING count(title) > 1;
+
+-- way 1
+EXPLAIN ANALYZE DELETE FROM
+    basket AS a USING basket AS b
+WHERE
+    a.id < b.id AND a.title = b.title;
+
+-- way 2
+EXPLAIN ANALYZE DELETE FROM basket WHERE id IN (
+    SELECT id FROM (
+        SELECT
+            id,
+            ROW_NUMBER() OVER (PARTITION BY title ORDER BY id) AS num
+        FROM "basket"
+    ) AS tmp
+    WHERE tmp.num > 1
+);
+
+-- way 3
+CREATE TABLE "basket_temp" (LIKE "basket");
+INSERT INTO "basket_temp" (title, id) SELECT DISTINCT ON (title) title, id FROM "basket";
+DROP TABLE "basket";
+ALTER TABLE "basket_temp" RENAME TO "basket";
+CREATE SEQUENCE basket_id_sequnce;
+ALTER TABLE "basket" ALTER COLUMN id SET DEFAULT nextval('basket_id_sequnce');
+ALTER SEQUENCE basket_id_sequnce OWNED BY "basket".id;
+SELECT setval('basket_id_sequnce', SELECT MAX(id) FROM "basket");
