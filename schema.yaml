@@ -1,18 +1,29 @@
 User:
   fields:
+    username: varchar(50)
     first_name: varchar(50)
     last_name: varchar(50)
     age: integer
+  constraints:
+    title: unique
+  null: [first_name, last_name, age]
 
 Article:
   fields:
     title: varchar(50)
     text: text
+  references:
+    user: M2O
+    category: M2O
 
 Category:
   fields:
     title: varchar(50)
+  constraints:
+    title: unique
 
 Tag:
   fields:
     title: varchar(50)
+  references:
+    article: M2M
