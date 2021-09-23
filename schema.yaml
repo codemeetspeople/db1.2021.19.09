@@ -1,0 +1,18 @@
+User:
+  fields:
+    first_name: varchar(50)
+    last_name: varchar(50)
+    age: integer
+
+Article:
+  fields:
+    title: varchar(50)
+    text: text
+
+Category:
+  fields:
+    title: varchar(50)
+
+Tag:
+  fields:
+    title: varchar(50)
